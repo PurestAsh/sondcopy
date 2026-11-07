@@ -1,0 +1,5 @@
+version: 1
+bundleID: com.example.apple-hello
+# 自定义 Info.plist，补充 iOS 本地网络权限说明（NSLocalNetworkUsageDescription）。
+# 缺少该 key 时，iOS 14+ 会静默拒绝局域网收发。
+infoPath: Info.plist
