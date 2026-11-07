@@ -23,12 +23,12 @@ Sound Copy 是一个极简的跨设备音频串流方案：
 
 ```
 ┌──────────────────────────────┐          UDP :9000           ┌──────────────────────────────┐
-│  Linux (Wayland)              │   interleaved f32 LE         │  iOS 17+                      │
-│  ┌─────────────────────────┐  │ ───────────────────────────► │  ┌─────────────────────────┐  │
-│  │ sound-copy-server (Rust)│  │   48 kHz · stereo · 20 ms    │  │ sound-copy-ios (SwiftUI)│  │
-│  │ gpui-kit + flexaudio    │  │                              │  │ UDPReceiver             │  │
-│  │ SystemLoopback 采集     │  │                              │  │ AVAudioEngine 播放      │  │
-│  └─────────────────────────┘  │                              │  └─────────────────────────┘  │
+│  Linux (Wayland)             │   interleaved f32 LE         │  iOS 17+                     │
+│  ┌─────────────────────────┐ │ ───────────────────────────► │  ┌─────────────────────────┐ │
+│  │ sound-copy-server (Rust)│ │   48 kHz · stereo · 20 ms    │  │ sound-copy-ios (SwiftUI)│ │
+│  │ gpui-kit + flexaudio    │ │                              │  │ UDPReceiver             │ │
+│  │ SystemLoopback 采集      │ │                              │  │ AVAudioEngine 播放      │ │
+│  └─────────────────────────┘ │                              │  └─────────────────────────┘ │
 └──────────────────────────────┘                              └──────────────────────────────┘
 ```
 
