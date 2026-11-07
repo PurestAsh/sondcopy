@@ -1,0 +1,9 @@
+[package]
+name = "sound-copy"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+flexaudio = "0.8.1"
+gpui = "0.2.2"
+gpui-kit = "0.9.0"
