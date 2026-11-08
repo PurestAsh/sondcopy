@@ -3,6 +3,8 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use flexaudio::{SourceKind, StreamConfig, open};
+use gpui_kit::Global;
+use gpui_kit::{App, MenuItem, actions};
 use gpui_kit::{
     AppContext, Context, Entity, ParentElement, Render, Task, WindowBounds, WindowOptions,
     application,
@@ -15,6 +17,9 @@ use gpui_kit::{
     },
     div, init, open_window, px, size,
 };
+use gpui_tray::{Icon, Tray};
+
+actions!(tray_example, [Open, Quit]);
 
 struct State {
     caputure: bool,
@@ -25,11 +30,14 @@ struct State {
     input_state: Entity<InputState>,
 }
 
+struct AppTray(Tray);
+
+impl Global for AppTray {}
+
 impl State {
     fn new(window: &mut gpui_kit::Window, cx: &mut Context<Self>) -> Self {
-        let input_state = cx.new(|cx| {
-            InputState::new(window, cx).default_value("192.168.31.103:9000")
-        });
+        let input_state =
+            cx.new(|cx| InputState::new(window, cx).default_value("192.168.31.103:9000"));
         Self {
             caputure: false,
             target_host: String::from("192.168.31.103:9000"),
@@ -46,39 +54,38 @@ impl Render for State {
         _window: &mut gpui_kit::Window,
         cx: &mut gpui_kit::prelude::Context<Self>,
     ) -> impl gpui_kit::prelude::IntoElement {
-        div()
-            .v_flex()
-            .child(Input::new(&self.input_state))
-            .child(
-                Button::new("caputure")
-                    .label(if self.caputure {
-                        "结束采集"
+        div().v_flex().child(Input::new(&self.input_state)).child(
+            Button::new("caputure")
+                .label(if self.caputure {
+                    "结束采集"
+                } else {
+                    "开始采集"
+                })
+                .on_click(cx.listener(|state, _, _, cx| {
+                    //MARK: 开始采集
+                    if !state.caputure {
+                        let addr = state.input_state.read(cx).content().text().to_string();
+                        state.target_host = addr;
+                        caputure(cx, state)
                     } else {
-                        "开始采集"
-                    })
-                    .on_click(cx.listener(|state, _, _, cx| {
-                        //MARK: 开始采集
-                        if !state.caputure {
-                            let addr =
-                                state.input_state.read(cx).content().text().to_string();
-                            state.target_host = addr;
-                            caputure(cx, state)
-                        } else {
-                            // 先通知后台循环退出，再释放 Task 句柄。
-                            state.stop_flag.store(true, Ordering::Relaxed);
-                            state.task = None;
-                        }
+                        // 先通知后台循环退出，再释放 Task 句柄。
+                        state.stop_flag.store(true, Ordering::Relaxed);
+                        state.task = None;
+                    }
 
-                        state.caputure = !state.caputure;
-                        cx.notify();
-                    })),
-            )
+                    state.caputure = !state.caputure;
+                    cx.notify();
+                })),
+        )
     }
 }
 
 fn main() {
     application().with_assets(Assets).run(|cx| {
         init(cx);
+
+        create_tray(cx);
+
         Theme::change(ThemeMode::Dark, None, cx);
 
         open_window(
@@ -174,4 +181,24 @@ fn caputure(cx: &mut Context<State>, state: &mut State) {
         stream.stop();
         eprintln!("采集已停止，共发送 {sent_packets} 包");
     }));
+}
+
+fn create_tray(cx: &mut App) {
+    let icon = Icon::from_rgba(vec![0; 32 * 32 * 4], 32, 32)
+        .build()
+        .unwrap();
+    let tray = Tray::builder()
+        .icon(icon)
+        .title("Sound Copy")
+        .tooltip("Sound Copy")
+        .menu(|_cx| {
+            vec![
+                MenuItem::action("Open", Open),
+                MenuItem::separator(),
+                MenuItem::action("Quit", Quit),
+            ]
+        })
+        .build(cx)
+        .unwrap();
+    cx.set_global(AppTray(tray));
 }
